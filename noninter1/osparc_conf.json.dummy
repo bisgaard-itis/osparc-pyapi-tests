@@ -1,0 +1,5 @@
+{
+    "host": "yourip_dummy:8006",
+    "username": "yourapikey_dummy",
+    "password": "yourapisecret_dummy"
+}
