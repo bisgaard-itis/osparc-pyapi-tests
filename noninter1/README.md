@@ -1,14 +1,14 @@
 How to use
 ==========
 
-* Put your api key/secret in an osparc_conf file, according to:
+* Put your api key/secret in an osparc_conf.json file, according to:
 [osparc_conf.json.dummy](osparc_conf.json.dummy)
 
 * Look at 
 [run.sh](run.sh)
 and adapt to your system.
 
-* Create a study template according to this figure:
+* Create a study template according to this figure (make sure the file picker and probe have exactly the same name as in the figure):
 [study_template.png](study_template.png)
 
 * Put the UUID of the template you created in the run_study.py script
