@@ -84,6 +84,8 @@ with osparc.ApiClient(osparc_cfg) as api_client:
             job_results["OutputFile1"].id
         )
     )
+
+    studies_api.delete_study_job(study_id=template_id, job_id=new_job.id)
     shutil.move(output_file, output_filename)
 
     output_file = Path(output_filename)
