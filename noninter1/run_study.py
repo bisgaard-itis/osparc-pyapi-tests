@@ -13,6 +13,8 @@ import osparc_client
 osparc_conf = json.loads(Path("osparc_conf.json").read_text())
 osparc_cfg = osparc.Configuration(**osparc_conf)
 
+MAX_N_OF_ATTEMPTS = 5
+
 with osparc.ApiClient(osparc_cfg) as api_client:
     studies_api = osparc_client.StudiesApi(api_client)
 
@@ -28,10 +30,14 @@ with osparc.ApiClient(osparc_cfg) as api_client:
     # template_id = "02621c5a-bbba-11ee-ba85-02420a000022"
     # template_id = "a13d566e-c05b-11ee-95bf-02420a000008"
     # job_id = "32ccb81c-bc34-11ee-ba85-02420a000022"
-    template_id = "5b01fb90-f59f-11ee-9635-02420a140047"
+    # local id template_id = "5b01fb90-f59f-11ee-9635-02420a140047"
+    template_id = "f5134716-fd88-11ee-ac84-02420a00f18a"
 
     print(studies_api.list_study_ports(study_id=template_id))
 
+    test_py_file_tmp = osparc.api.FilesApi(api_client).upload_file(
+        file=Path("test.py")
+    )
     test_py_file = osparc.api.FilesApi(api_client).upload_file(
         file=Path("test.py")
     )
@@ -43,16 +49,30 @@ with osparc.ApiClient(osparc_cfg) as api_client:
         file=Path("input.json")
     )
 
-    new_job = studies_api.create_study_job(
-        study_id=template_id,
-        job_inputs={
-            "values": {
-                # "InputNumber1": 0.5,
-                # "InputInteger1": 6,
-                "InputFile1": test_json_file,
-            }
-        },
-    )
+    n_of_attempts = 0
+    while True:
+        try:
+            n_of_attempts += 1
+            new_job = studies_api.create_study_job(
+                study_id=template_id,
+                job_inputs={
+                    "values": {
+                        # "InputNumber1": 0.5,
+                        # "InputInteger1": 6,
+                        "InputFile1": test_json_file,
+                    }
+                },
+            )
+            break
+        except osparc_client.exceptions.ApiException:
+            if n_of_attempts >= MAX_N_OF_ATTEMPTS:
+                raise Exception(
+                    f"Tried {n_of_attempts} times to create job but failed"
+                )
+            else:
+                print("Received API exception, retrying")
+
+    print(f"New job created: {new_job}")
 
     studies_api.start_study_job(study_id=template_id, job_id=new_job.id)
 
