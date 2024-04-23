@@ -11,11 +11,17 @@ import osparc.api
 import osparc_client
 
 osparc_conf = json.loads(Path("osparc_conf.json").read_text())
-osparc_cfg = osparc.Configuration(**osparc_conf)
+template_id = osparc_conf["template_id"]
+del osparc_conf["template_id"]
+osparc_cfg = osparc.Configuration(
+    retry_status_codes={429, 503, 504, 404}, **osparc_conf
+)
 
 MAX_N_OF_ATTEMPTS = 5
 
-with osparc.ApiClient(osparc_cfg) as api_client:
+with osparc.ApiClient(
+    osparc_cfg,
+) as api_client:
     studies_api = osparc_client.StudiesApi(api_client)
 
     # template_id = "61b1bb42-ba03-11ee-986b-02420a00001c" # dummy
@@ -31,7 +37,8 @@ with osparc.ApiClient(osparc_cfg) as api_client:
     # template_id = "a13d566e-c05b-11ee-95bf-02420a000008"
     # job_id = "32ccb81c-bc34-11ee-ba85-02420a000022"
     # local id template_id = "5b01fb90-f59f-11ee-9635-02420a140047"
-    template_id = "f5134716-fd88-11ee-ac84-02420a00f18a"
+    # osparc-master template_id = "f5134716-fd88-11ee-ac84-02420a00f18a"
+    # template_id = "4b7a704a-007a-11ef-befd-0242ac114f07"  # aws-osparc-master
 
     print(studies_api.list_study_ports(study_id=template_id))
 
@@ -88,15 +95,29 @@ with osparc.ApiClient(osparc_cfg) as api_client:
 
         time.sleep(1)
 
+    if job_status.state == "FAILED":
+        raise Exception("Job failed")
+
     print(
         studies_api.inspect_study_job(study_id=template_id, job_id=new_job.id)
     )
 
-    job_results = studies_api.get_study_job_outputs(
-        study_id=template_id, job_id=new_job.id
-    ).results
+    output_file = None
+    n_of_attempts = 0
+    while output_file is None:
+        n_of_attempts += 1
+        job_results = studies_api.get_study_job_outputs(
+            study_id=template_id, job_id=new_job.id
+        ).results
 
-    print(job_results)
+        print(job_results)
+        output_file = job_results["OutputFile1"]
+        if n_of_attempts >= MAX_N_OF_ATTEMPTS:
+            raise Exception(
+                f"Tried {n_of_attempts} times to get job output file "
+                "but failed"
+            )
+        time.sleep(2)
 
     output_filename = job_results["OutputFile1"].filename
     output_file = Path(
