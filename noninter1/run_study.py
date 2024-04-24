@@ -6,6 +6,7 @@ import time
 import zipfile
 from pathlib import Path
 
+import numpy
 import osparc
 import osparc.api
 import osparc_client
@@ -14,10 +15,11 @@ osparc_conf = json.loads(Path("osparc_conf.json").read_text())
 template_id = osparc_conf["template_id"]
 del osparc_conf["template_id"]
 osparc_cfg = osparc.Configuration(
-    retry_status_codes={429, 503, 504, 404}, **osparc_conf
+    retry_status_codes={429, 502, 503, 504, 404, 506}, **osparc_conf
 )
 
 MAX_N_OF_ATTEMPTS = 5
+RETRY_MEAN_START_INTERVAL = 2
 
 with osparc.ApiClient(
     osparc_cfg,
@@ -42,24 +44,24 @@ with osparc.ApiClient(
 
     print(studies_api.list_study_ports(study_id=template_id))
 
-    test_py_file_tmp = osparc.api.FilesApi(api_client).upload_file(
-        file=Path("test.py")
-    )
-    test_py_file = osparc.api.FilesApi(api_client).upload_file(
-        file=Path("test.py")
-    )
-
     test_data_file = osparc.api.FilesApi(api_client).upload_file(
         file=Path("input.data")
     )
+    print("Uploaded test data file ")
     test_json_file = osparc.api.FilesApi(api_client).upload_file(
         file=Path("input.json")
     )
+    print("Uploaded input json file ")
 
     n_of_attempts = 0
+    time.sleep(
+        numpy.random.exponential(n_of_attempts * RETRY_MEAN_START_INTERVAL)
+    )
+
     while True:
         try:
             n_of_attempts += 1
+            print("Creating job")
             new_job = studies_api.create_study_job(
                 study_id=template_id,
                 job_inputs={
@@ -70,6 +72,7 @@ with osparc.ApiClient(
                     }
                 },
             )
+            print("Job created successfully")
             break
         except osparc_client.exceptions.ApiException:
             if n_of_attempts >= MAX_N_OF_ATTEMPTS:
@@ -78,14 +81,23 @@ with osparc.ApiClient(
                 )
             else:
                 print("Received API exception, retrying")
+                time.sleep(
+                    numpy.random.exponential(
+                        n_of_attempts * RETRY_MEAN_START_INTERVAL
+                    )
+                )
 
     print(f"New job created: {new_job}")
 
     studies_api.start_study_job(study_id=template_id, job_id=new_job.id)
 
+    print("New job has started")
+
     job_status = studies_api.inspect_study_job(
         study_id=template_id, job_id=new_job.id
     )
+
+    print(f"New job, status: {job_status.state}")
 
     while job_status.state != "SUCCESS" and job_status.state != "FAILED":
         job_status = studies_api.inspect_study_job(

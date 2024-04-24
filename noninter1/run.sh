@@ -5,7 +5,6 @@ set -e
 #rm -rf testenv
 #python -m venv testenv
 source ./testenv/bin/activate
-
 # cp /home/vangeit/src/osparc-simcore-clients/clients/python/artifacts/dist/*.whl tmp_whl
 
 #pip install --force-reinstall /home/vangeit/src/osparc-simcore-clients/clients/python/artifacts/dist/*.whl
@@ -13,4 +12,4 @@ source ./testenv/bin/activate
 #python -c 'import osparc; print(osparc.__version__)'
 export OSPARC_DEV_FEATURES_ENABLED=1
 rm -rf output_1
-python run_study.py
+python -u run_study.py
