@@ -1,6 +1,7 @@
 """Test osparc client API"""
 
 import json
+import os
 import shutil
 import time
 import zipfile
@@ -10,6 +11,12 @@ import numpy
 import osparc
 import osparc.api
 import osparc_client
+import pdb_attach
+
+pdb_port = int(numpy.random.uniform(10000, 50000))
+pdb_attach.listen(pdb_port)
+print(f"PDB listening on port: {pdb_port}")
+print(f"My PID is: {os.getpid()}")
 
 osparc_conf = json.loads(Path("osparc_conf.json").read_text())
 template_id = osparc_conf["template_id"]
@@ -44,11 +51,11 @@ with osparc.ApiClient(
 
     print(studies_api.list_study_ports(study_id=template_id))
 
-    test_data_file = osparc.api.FilesApi(api_client).upload_file(
+    test_data_file = osparc.FilesApi(api_client).upload_file(
         file=Path("input.data")
     )
     print("Uploaded test data file ")
-    test_json_file = osparc.api.FilesApi(api_client).upload_file(
+    test_json_file = osparc.FilesApi(api_client).upload_file(
         file=Path("input.json")
     )
     print("Uploaded input json file ")
@@ -133,7 +140,7 @@ with osparc.ApiClient(
 
     output_filename = job_results["OutputFile1"].filename
     output_file = Path(
-        osparc.api.FilesApi(api_client).download_file(
+        osparc.FilesApi(api_client).download_file(
             job_results["OutputFile1"].id
         )
     )
