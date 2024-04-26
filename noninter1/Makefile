@@ -1,6 +1,6 @@
 SHELL=/bin/bash -o pipefail
 
-PARALLEL_TASKS := 10
+PARALLEL_TASKS := 100
 
 clean:
 	rm -rf logs
@@ -17,6 +17,7 @@ parallel-awsmaster: clean
 	mkdir -p logs
 	# seq 20 | parallel --joblog test.log -N0 --bar --halt now,fail=1 ./run.sh
 	#seq ${PARALLEL_TASKS} | parallel -j ${PARALLEL_TASKS} --tag -v --joblog test.log --bar ./run.sh {} '2>&1'
-	seq ${PARALLEL_TASKS} | parallel -j ${PARALLEL_TASKS} --tag -v --joblog test.log --bar ./run.sh {} '2>&1 |' tee logs/{}.log 
+	#seq ${PARALLEL_TASKS} | parallel -j ${PARALLEL_TASKS} --tag -v --joblog test.log --bar ./run.sh {} '2>&1 |' tee logs/{}.log 
+	seq ${PARALLEL_TASKS} | parallel -j ${PARALLEL_TASKS} --tag -v --joblog test.log --bar 'set -o pipefail; ./run.sh {} 2>&1 | tee logs/{}.log'
 	cat test.log
 
