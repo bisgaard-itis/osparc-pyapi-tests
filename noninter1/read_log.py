@@ -34,16 +34,19 @@ def main():
     ]
     ticks = range(len(filtered_counts))
     fig, ax = plt.subplots()
+
     ax.bar(
         ticks,
         filtered_counts,
         color="black",
         width=0.5,
         align="center",
+        zorder=2,
     )
+    ax.grid(zorder=1)
 
     ax.set_xlabel("Exit value")
-    ax.set_ylabel("Number")
+    ax.set_ylabel(f"Number (out of {len(exitvals)})")
     ax.set_ylim(0, len(exitvals))
     ax.set_yticks(range(0, len(exitvals) + 1, 5))
     ax.set_xticks(ticks)
