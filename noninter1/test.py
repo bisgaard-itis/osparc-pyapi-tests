@@ -1,6 +1,5 @@
-import os
 import json
-
+import os
 from pathlib import Path
 
 print("Konichiwa. O genki desu ka?")
